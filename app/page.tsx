@@ -32,10 +32,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Вместо import App from "@/components/pages/app";
-import MonadHero from "@/components/MonadHero";
+// Импортируем компонент приложения
+import App from "@/components/pages/app";
 
 export default function Home() {
-  return <MonadHero />;
+  return <App />;
 }
-
