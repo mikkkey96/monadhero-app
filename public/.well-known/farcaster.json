@@ -1,0 +1,24 @@
+{
+  "miniapp": {
+    "version": "1",
+    "name": "MonadHero",
+    "iconUrl": "https://monadhero-app.vercel.app/hero-icon.png",
+    "homeUrl": "https://monadhero-app.vercel.app",
+    "splashImageUrl": "https://monadhero-app.vercel.app/hero-splash.png",
+    "splashBackgroundColor": "#7c3aed",
+    "subtitle": "Blockchain Hero Badge Minting",
+    "description": "Analyze your Monad blockchain activity and mint exclusive Hero NFT badges based on your on-chain achievements.",
+    "primaryCategory": "finance",
+    "tags": ["blockchain", "nft", "crypto", "monad", "badges"],
+    "requiredChains": ["eip155:10143"],
+    "requiredCapabilities": [
+      "actions.signIn",
+      "wallet.getEthereumProvider"
+    ],
+    "heroImageUrl": "https://monadhero-app.vercel.app/hero-banner.png",
+    "tagline": "Prove Your Blockchain Heroics",
+    "ogTitle": "MonadHero - Blockchain Hero Badges",
+    "ogDescription": "Analyze your Monad activity and mint Hero NFT badges",
+    "ogImageUrl": "https://monadhero-app.vercel.app/og-image.png"
+  }
+}
