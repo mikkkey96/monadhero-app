@@ -1,11 +1,11 @@
 import { ethers } from 'ethers';
 
-// Monad Testnet конфигурация  
-const MONAD_TESTNET_RPC = "https://testnet-rpc.monad.xyz";
-const MONAD_TESTNET_EXPLORER = "https://testnet.monadexplorer.com";
-
-// Создаем провайдер для Monad Testnet
-const provider = new ethers.JsonRpcProvider(MONAD_TESTNET_RPC);
+// Monad Testnet RPC URLs (несколько вариантов)
+const MONAD_RPC_URLS = [
+  "https://testnet-rpc.monad.xyz",
+  "https://docs-demo.monad-testnet.quiknode.pro/",
+  "https://rpc.testnet.monad.xyz"
+];
 
 export interface WalletAnalysis {
   address: string;
@@ -18,28 +18,65 @@ export interface WalletAnalysis {
   averageGasUsed: string;
   balance: string;
   isActive: boolean;
+  isRealData: boolean; // Добавляем флаг реальных данных
+}
+
+// Функция создания провайдера с retry
+async function createProvider(): Promise<ethers.JsonRpcProvider | null> {
+  for (const rpcUrl of MONAD_RPC_URLS) {
+    try {
+      console.log(`🔄 Trying RPC: ${rpcUrl}`);
+      const provider = new ethers.JsonRpcProvider(rpcUrl, undefined, {
+        staticNetwork: ethers.Network.from({
+          name: "monad-testnet",
+          chainId: 10143
+        })
+      });
+      
+      // Тестируем соединение с таймаутом
+      const blockPromise = provider.getBlockNumber();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+      
+      const blockNumber = await Promise.race([blockPromise, timeoutPromise]);
+      console.log(`✅ Connected to ${rpcUrl}, block: ${blockNumber}`);
+      
+      return provider;
+    } catch (error) {
+      console.log(`❌ Failed to connect to ${rpcUrl}:`, error.message);
+      continue;
+    }
+  }
+  
+  return null; // Все RPC не работают
 }
 
 export async function analyzeWallet(address: string): Promise<WalletAnalysis> {
+  console.log('🔍 Starting analysis for:', address);
+  
   try {
-    console.log('🔍 Starting REAL analysis for:', address);
-    console.log('🌐 RPC URL:', MONAD_TESTNET_RPC);
+    // Пытаемся подключиться к любому работающему RPC
+    const provider = await createProvider();
     
-    // Сначала проверим соединение
-    const latestBlock = await provider.getBlockNumber();
-    console.log('✅ Connected to Monad Testnet! Latest block:', latestBlock);
+    if (!provider) {
+      throw new Error("All Monad RPC endpoints are unavailable");
+    }
     
-    // Получаем базовые данные
-    console.log('📊 Fetching wallet data...');
-    const balance = await provider.getBalance(address);
-    const transactionCount = await provider.getTransactionCount(address);
+    // Получаем данные из блокчейна
+    console.log('📊 Fetching real blockchain data...');
+    const [balance, transactionCount] = await Promise.all([
+      provider.getBalance(address),
+      provider.getTransactionCount(address)
+    ]);
     
-    console.log('💰 Real Balance:', ethers.formatEther(balance), 'MON');
-    console.log('📈 Real Transaction count:', transactionCount);
+    const balanceInMON = ethers.formatEther(balance);
+    console.log('💰 Real Balance:', balanceInMON, 'MON');
+    console.log('📈 Real Transactions:', transactionCount);
     
-    // Если дошли сюда - данные реальные!
+    // Создаем анализ на основе реальных данных
     const isActive = transactionCount > 0;
-    const estimatedDaysActive = Math.min(Math.max(Math.floor(transactionCount / 2), 1), 365);
+    const estimatedDaysActive = Math.min(Math.max(Math.floor(transactionCount / 2) + 1, 1), 365);
     const estimatedContracts = Math.floor(transactionCount * 0.3);
     
     const getContractTypes = (txCount: number): string[] => {
@@ -52,90 +89,73 @@ export async function analyzeWallet(address: string): Promise<WalletAnalysis> {
       return types.length > 0 ? types : ['Basic'];
     };
 
-    const analysis: WalletAnalysis = {
+    const realAnalysis: WalletAnalysis = {
       address,
       transactions: transactionCount,
       contracts: estimatedContracts,
       daysActive: estimatedDaysActive,
-      volume: ethers.formatEther(balance),
+      volume: balanceInMON,
       firstTransaction: Date.now() - (estimatedDaysActive * 24 * 60 * 60 * 1000),
       contractTypes: getContractTypes(transactionCount),
       averageGasUsed: (21000 + Math.floor(Math.random() * 30000)).toString(),
-      balance: ethers.formatEther(balance),
-      isActive
+      balance: balanceInMON,
+      isActive,
+      isRealData: true // РЕАЛЬНЫЕ ДАННЫЕ!
     };
 
-    console.log('✅ REAL DATA from Monad Testnet:', analysis);
-    alert(`🎉 SUCCESS! Real blockchain data loaded!\n\nAddress: ${address.slice(0,10)}...\nBalance: ${ethers.formatEther(balance)} MON\nTransactions: ${transactionCount}\nBlock: ${latestBlock}`);
-    
-    return analysis;
+    console.log('✅ SUCCESS! Real blockchain data loaded:', realAnalysis);
+    return realAnalysis;
 
   } catch (error) {
-    console.error('❌ RPC ERROR - Switching to simulation:', error.message);
-    console.error('Full error:', error);
-    alert(`❌ RPC Connection failed: ${error.message}\n\nUsing simulation data instead.`);
+    console.error('❌ Blockchain connection failed:', error.message);
     
-    // Fallback симуляция
-    const simulation = {
+    // Создаем более реалистичную симуляцию
+    const simulatedAnalysis: WalletAnalysis = {
       address,
-      transactions: Math.floor(Math.random() * 100) + 5,
-      contracts: Math.floor(Math.random() * 15) + 1,
-      daysActive: Math.floor(Math.random() * 60) + 7,
-      volume: (Math.random() * 10 + 0.1).toFixed(4),
-      firstTransaction: Date.now() - (Math.floor(Math.random() * 60) * 24 * 60 * 60 * 1000),
-      contractTypes: ['DEX', 'DeFi'],
-      averageGasUsed: '35000',
-      balance: (Math.random() * 10 + 0.1).toFixed(4),
-      isActive: true
+      transactions: Math.floor(Math.random() * 150) + 25, // 25-175 транзакций
+      contracts: Math.floor(Math.random() * 20) + 5,      // 5-25 контрактов
+      daysActive: Math.floor(Math.random() * 90) + 14,    // 14-104 дня
+      volume: (Math.random() * 25 + 1).toFixed(4),       // 1-26 MON
+      firstTransaction: Date.now() - (Math.floor(Math.random() * 90 + 14) * 24 * 60 * 60 * 1000),
+      contractTypes: ['DEX', 'DeFi', 'NFT'].slice(0, Math.floor(Math.random() * 3) + 1),
+      averageGasUsed: (25000 + Math.floor(Math.random() * 40000)).toString(),
+      balance: (Math.random() * 25 + 1).toFixed(4),
+      isActive: true,
+      isRealData: false // СИМУЛИРОВАННЫЕ ДАННЫЕ!
     };
     
-    console.log('🎭 SIMULATED DATA:', simulation);
-    return simulation;
+    console.log('🎭 Using simulated data:', simulatedAnalysis);
+    return simulatedAnalysis;
   }
 }
 
 export function calculateHeroScore(analysis: WalletAnalysis): number {
   let score = 0;
   
-  // Базовые транзакции (2 балла за транзакцию)
-  score += analysis.transactions * 2;
+  // Базовые транзакции (3 балла за транзакцию)
+  score += analysis.transactions * 3;
   
-  // Взаимодействие с контрактами (5 баллов за контракт)
-  score += analysis.contracts * 5;
+  // Взаимодействие с контрактами (8 баллов за контракт)
+  score += analysis.contracts * 8;
   
-  // Длительность активности (1 балл за день)
-  score += analysis.daysActive;
+  // Длительность активности (2 балла за день)
+  score += analysis.daysActive * 2;
   
-  // Баланс (10 баллов за MON)
-  score += Math.floor(parseFloat(analysis.volume) * 10);
+  // Баланс (15 баллов за MON)
+  score += Math.floor(parseFloat(analysis.volume) * 15);
   
-  // Разнообразие контрактов (15 баллов за тип)
-  score += analysis.contractTypes.length * 15;
+  // Разнообразие контрактов (25 баллов за тип)
+  score += analysis.contractTypes.length * 25;
   
   // Бонус за активность
-  if (analysis.isActive) score += 50;
+  if (analysis.isActive) score += 100;
+  
+  // Бонус за реальные данные
+  if (analysis.isRealData) score += 200;
   
   return score;
 }
 
-// ВАША ФУНКЦИЯ с реальным активным адресом!
 export function getTestAddress(): string {
-  const realActiveAddresses = [
-    '0xC8F64A659edc7c422859d06322Aa879c7F1AcB9b', // ВАШ активный адрес!
-    '0x000000000000000000000000000000000000dead', // Burn address (резерв)
-  ];
-  
-  // Всегда используем ваш активный адрес первым
-  return realActiveAddresses[0];
-}
-
-export async function testConnection() {
-  try {
-    const block = await provider.getBlockNumber();
-    console.log('🟢 Monad Testnet connected! Block:', block);
-    return true;
-  } catch (error) {
-    console.log('🔴 Monad Testnet connection failed:', error.message);
-    return false;
-  }
+  return '0xC8F64A659edc7c422859d06322Aa879c7F1AcB9b'; // Ваш активный адрес
 }

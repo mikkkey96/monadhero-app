@@ -31,12 +31,11 @@ export default function MonadHero() {
     setAnalyzing(true);
     
     try {
-      // Для демонстрации используем случайный тестовый адрес
-      // В реальном приложении получили бы адрес из Farcaster контекста
+      // Используем ваш активный адрес
       const testAddress = getTestAddress();
       console.log('🔍 Analyzing address:', testAddress);
       
-      // Получаем реальные данные из Monad Testnet
+      // Получаем данные (реальные или симулированные)
       const analysis = await analyzeWallet(testAddress);
       const score = calculateHeroScore(analysis);
       
@@ -52,28 +51,28 @@ export default function MonadHero() {
   };
 
   const calculateHeroLevel = (score: number) => {
-    if (score >= 1000) return { 
+    if (score >= 1500) return { 
       name: 'LEGENDARY HERO', 
       nfts: 4, 
       color: '#7c3aed', 
       icon: '🦸‍♂️',
       description: 'Master of the Monad Universe'
     };
-    if (score >= 500) return { 
+    if (score >= 800) return { 
       name: 'EPIC HERO', 
       nfts: 3, 
       color: '#fbbf24', 
       icon: '⚡',
       description: 'Powerful Network Champion'
     };
-    if (score >= 200) return { 
+    if (score >= 400) return { 
       name: 'BRAVE HERO', 
       nfts: 2, 
       color: '#10b981', 
       icon: '🛡️',
       description: 'Steadfast Network Defender'
     };
-    if (score >= 100) return { 
+    if (score >= 150) return { 
       name: 'RISING HERO', 
       nfts: 1, 
       color: '#f59e0b', 
@@ -108,7 +107,8 @@ export default function MonadHero() {
         level: heroLevel.name,
         nfts: heroLevel.nfts,
         score: heroScore,
-        address: walletData?.address
+        address: walletData?.address,
+        isRealData: walletData?.isRealData
       });
       
       // Симуляция минта с задержкой
@@ -121,7 +121,8 @@ export default function MonadHero() {
         heroScore
       );
       
-      alert(`🎉 [TEST MODE] Hero Badge minted!\n\nMock Transaction: ${txHash.slice(0, 10)}...\n\nLevel: ${heroLevel.name}\nBadges: ${heroLevel.nfts}\nScore: ${heroScore}\n\nReal Balance: ${walletData?.balance} MON`);
+      const dataType = walletData?.isRealData ? 'REAL BLOCKCHAIN DATA' : 'SIMULATED DATA';
+      alert(`🎉 [TEST MODE] Hero Badge minted!\n\nData Type: ${dataType}\nTransaction: ${txHash.slice(0, 10)}...\n\nLevel: ${heroLevel.name}\nBadges: ${heroLevel.nfts}\nScore: ${heroScore}\nBalance: ${walletData?.balance} MON`);
       
     } catch (error) {
       console.error('Mint failed:', error);
@@ -157,19 +158,45 @@ export default function MonadHero() {
         </p>
       </div>
 
-      {/* Статус блокчейн интеграции */}
-      <div style={{ 
-        background: 'rgba(16, 185, 129, 0.1)', 
-        padding: '15px', 
-        borderRadius: '12px',
-        marginBottom: '20px',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(16, 185, 129, 0.3)'
-      }}>
-        <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
-          ⛓️ <strong style={{ color: '#10b981' }}>Live Blockchain Data</strong> - Connected to Monad Testnet
-        </p>
-      </div>
+      {/* ИНДИКАТОР ТИПА ДАННЫХ - ДО АНАЛИЗА */}
+      {!walletData && (
+        <div style={{ 
+          background: 'rgba(124, 58, 237, 0.1)', 
+          padding: '15px', 
+          borderRadius: '12px',
+          marginBottom: '20px',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(124, 58, 237, 0.3)'
+        }}>
+          <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
+            🔄 <strong style={{ color: '#a855f7' }}>Ready to Connect</strong> - Will attempt Monad Testnet blockchain connection
+          </p>
+        </div>
+      )}
+
+      {/* ИНДИКАТОР ТИПА ДАННЫХ - ПОСЛЕ АНАЛИЗА */}
+      {walletData && (
+        <div style={{ 
+          background: walletData.isRealData 
+            ? 'rgba(16, 185, 129, 0.1)' 
+            : 'rgba(251, 191, 36, 0.1)', 
+          padding: '15px', 
+          borderRadius: '12px',
+          marginBottom: '20px',
+          backdropFilter: 'blur(10px)',
+          border: walletData.isRealData 
+            ? '1px solid rgba(16, 185, 129, 0.3)' 
+            : '1px solid rgba(251, 191, 36, 0.3)'
+        }}>
+          <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
+            {walletData.isRealData ? (
+              <>⛓️ <strong style={{ color: '#10b981' }}>Real Blockchain Data</strong> - Successfully connected to Monad Testnet</>
+            ) : (
+              <>🎭 <strong style={{ color: '#fbbf24' }}>Simulated Data</strong> - RPC connection failed, using enhanced demo data</>
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Кнопка анализа */}
       {!analyzing && !walletData && (
@@ -207,10 +234,10 @@ export default function MonadHero() {
             margin: '0 auto 20px'
           }}></div>
           <p style={{ fontSize: '18px', marginBottom: '10px' }}>
-            🔍 Scanning Monad Testnet blockchain...
+            🔍 Connecting to Monad Testnet...
           </p>
           <p style={{ fontSize: '14px', opacity: '0.8' }}>
-            Fetching real transaction data, balances, and on-chain activity
+            Attempting to fetch real blockchain data, transaction history, and wallet balance
           </p>
           <style jsx>{`
             @keyframes spin {
@@ -270,6 +297,9 @@ export default function MonadHero() {
             <p style={{ margin: '5px 0 0 0', fontSize: '16px', fontWeight: 'bold', fontFamily: 'monospace' }}>
               {walletData.address.slice(0, 10)}...{walletData.address.slice(-8)}
             </p>
+            <p style={{ margin: '5px 0 0 0', fontSize: '12px', opacity: '0.6' }}>
+              {walletData.isRealData ? '✅ Data fetched from blockchain' : '⚠️ Using simulated data'}
+            </p>
           </div>
 
           {/* Расширенная статистика - ВСЕ 7 БЛОКОВ */}
@@ -293,6 +323,9 @@ export default function MonadHero() {
               <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
                 {walletData.transactions}
               </p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
+                {walletData.isRealData ? 'Real on-chain' : 'Simulated'}
+              </p>
             </div>
 
             {/* Блок 2 - Контракты */}
@@ -308,6 +341,9 @@ export default function MonadHero() {
               </h4>
               <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
                 {walletData.contracts}
+              </p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
+                Estimated interactions
               </p>
             </div>
 
@@ -325,6 +361,9 @@ export default function MonadHero() {
               <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
                 {walletData.daysActive}
               </p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
+                Based on activity
+              </p>
             </div>
 
             {/* Блок 4 - Объем */}
@@ -340,6 +379,9 @@ export default function MonadHero() {
               </h4>
               <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
                 {walletData.volume}
+              </p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
+                Estimated trading
               </p>
             </div>
 
@@ -357,6 +399,9 @@ export default function MonadHero() {
               <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
                 {heroScore}
               </p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
+                {walletData.isRealData ? '+200 real data bonus' : 'Simulation mode'}
+              </p>
             </div>
             
             {/* Блок 6 - Contract Types */}
@@ -372,6 +417,9 @@ export default function MonadHero() {
               </h4>
               <p style={{ margin: '0', fontSize: '16px', fontWeight: 'bold', color: 'white' }}>
                 {walletData?.contractTypes?.join(', ') || 'N/A'}
+              </p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
+                Based on tx patterns
               </p>
             </div>
 
@@ -391,7 +439,8 @@ export default function MonadHero() {
                 {parseFloat(walletData.balance).toFixed(6)} MON
               </p>
               <p style={{ margin: '5px 0 0 0', fontSize: '12px', opacity: '0.7' }}>
-                {walletData.isActive ? '🟢 Active Wallet' : '🔴 Inactive Wallet'}
+                {walletData.isActive ? '🟢 Active Wallet' : '🔴 Inactive Wallet'} • 
+                {walletData.isRealData ? ' Real balance from Monad RPC' : ' Simulated balance data'}
               </p>
             </div>
           </div>
