@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: '/.well-known/farcaster.json',
-        destination: 'https://api.farcaster.xyz/miniapps/hosted-manifest/https://api.farcaster.xyz/miniapps/hosted-manifest/0198f2fb-df63-03fe-8a9a-1e9e45728e4fD',
+        destination: 'https://api.farcaster.xyz/miniapps/hosted-manifest/0198f30c-2098-b590-4320-fa990ff1a919',
         permanent: false,
       },
     ];
