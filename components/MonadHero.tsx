@@ -1,39 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-
-// Типы для данных анализа
-interface WalletAnalysis {
-  address: string;
-  transactions: number;
-  contracts: number;
-  daysActive: number;
-  volume: string;
-  firstTransaction: number;
-  contractTypes: string[];
-  averageGasUsed: string;
-}
-
-// Функция минта NFT (встроенная)
-async function mintHeroNFT(
-  walletAddress: string,
-  level: string,
-  tier: number,
-  score: number
-) {
-  try {
-    // Симуляция минта NFT
-    console.log('Minting NFT:', { walletAddress, level, tier, score });
-    
-    // Симуляция транзакции
-    const mockTxHash = `0x${Math.random().toString(16).substr(2, 64)}`;
-    
-    return mockTxHash;
-  } catch (error) {
-    console.error('NFT mint failed:', error);
-    throw error;
-  }
-}
+import { analyzeWallet, calculateHeroScore, getTestAddress, type WalletAnalysis } from '@/utils/monadAnalyzer';
 
 export default function MonadHero() {
   const [analyzing, setAnalyzing] = useState(false);
@@ -41,75 +9,71 @@ export default function MonadHero() {
   const [heroScore, setHeroScore] = useState<number>(0);
   const [minting, setMinting] = useState(false);
 
-  // Функция расчета Hero Score
-  const calculateHeroScore = (analysis: WalletAnalysis): number => {
-    let score = 0;
-    
-    // Базовые транзакции (1 балл за транзакцию)
-    score += analysis.transactions;
-    
-    // Взаимодействие с контрактами (2 балла за контракт)
-    score += analysis.contracts * 2;
-    
-    // Длительность активности (1 балл за день)
-    score += analysis.daysActive;
-    
-    // Объем (1 балл за MON)
-    score += Math.floor(parseFloat(analysis.volume));
-    
-    // Разнообразие контрактов (10 баллов за тип)
-    score += analysis.contractTypes.length * 10;
-    
-    return score;
+  // Функция минта NFT (встроенная)
+  const mintHeroNFT = async (
+    walletAddress: string,
+    level: string,
+    tier: number,
+    score: number
+  ) => {
+    try {
+      console.log('Minting NFT:', { walletAddress, level, tier, score });
+      const mockTxHash = `0x${Math.random().toString(16).substr(2, 64)}`;
+      return mockTxHash;
+    } catch (error) {
+      console.error('NFT mint failed:', error);
+      throw error;
+    }
   };
 
+  // Обновленная функция анализа с реальными блокчейн данными
   const startAnalysis = async () => {
     setAnalyzing(true);
     
-    // Симуляция анализа с расширенными данными
-    setTimeout(() => {
-      const mockData: WalletAnalysis = {
-        address: '0x742d35Cc6e5F41D8B56D41a2c0b8B2E6E6C6E2F8',
-        transactions: Math.floor(Math.random() * 200) + 10,
-        contracts: Math.floor(Math.random() * 20) + 1,
-        daysActive: Math.floor(Math.random() * 100) + 7,
-        volume: (Math.random() * 50 + 0.1).toFixed(4),
-        firstTransaction: Date.now() - (Math.floor(Math.random() * 100) * 24 * 60 * 60 * 1000),
-        contractTypes: ['DEX', 'NFT', 'DeFi', 'Gaming', 'DAO'].slice(0, Math.floor(Math.random() * 4) + 1),
-        averageGasUsed: (21000 + Math.floor(Math.random() * 50000)).toString()
-      };
+    try {
+      // Для демонстрации используем случайный тестовый адрес
+      // В реальном приложении получили бы адрес из Farcaster контекста
+      const testAddress = getTestAddress();
+      console.log('🔍 Analyzing address:', testAddress);
       
-      const score = calculateHeroScore(mockData);
+      // Получаем реальные данные из Monad Testnet
+      const analysis = await analyzeWallet(testAddress);
+      const score = calculateHeroScore(analysis);
       
-      setWalletData(mockData);
+      setWalletData(analysis);
       setHeroScore(score);
-      setAnalyzing(false);
-    }, 3000);
+      
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      alert('❌ Failed to analyze wallet. Please try again.');
+    }
+    
+    setAnalyzing(false);
   };
 
   const calculateHeroLevel = (score: number) => {
-    if (score >= 500) return { 
+    if (score >= 1000) return { 
       name: 'LEGENDARY HERO', 
       nfts: 4, 
       color: '#7c3aed', 
       icon: '🦸‍♂️',
       description: 'Master of the Monad Universe'
     };
-    if (score >= 250) return { 
+    if (score >= 500) return { 
       name: 'EPIC HERO', 
       nfts: 3, 
       color: '#fbbf24', 
       icon: '⚡',
       description: 'Powerful Network Champion'
     };
-    if (score >= 100) return { 
+    if (score >= 200) return { 
       name: 'BRAVE HERO', 
       nfts: 2, 
       color: '#10b981', 
       icon: '🛡️',
       description: 'Steadfast Network Defender'
     };
-    if (score >= 50) return { 
+    if (score >= 100) return { 
       name: 'RISING HERO', 
       nfts: 1, 
       color: '#f59e0b', 
@@ -157,7 +121,7 @@ export default function MonadHero() {
         heroScore
       );
       
-      alert(`🎉 [TEST MODE] Hero Badge minted!\n\nMock Transaction: ${txHash.slice(0, 10)}...\n\nLevel: ${heroLevel.name}\nBadges: ${heroLevel.nfts}\nScore: ${heroScore}`);
+      alert(`🎉 [TEST MODE] Hero Badge minted!\n\nMock Transaction: ${txHash.slice(0, 10)}...\n\nLevel: ${heroLevel.name}\nBadges: ${heroLevel.nfts}\nScore: ${heroScore}\n\nReal Balance: ${walletData?.balance} MON`);
       
     } catch (error) {
       console.error('Mint failed:', error);
@@ -193,17 +157,17 @@ export default function MonadHero() {
         </p>
       </div>
 
-      {/* Тестовое сообщение */}
+      {/* Статус блокчейн интеграции */}
       <div style={{ 
-        background: 'rgba(255,255,255,0.1)', 
+        background: 'rgba(16, 185, 129, 0.1)', 
         padding: '15px', 
         borderRadius: '12px',
         marginBottom: '20px',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255,255,255,0.2)'
+        border: '1px solid rgba(16, 185, 129, 0.3)'
       }}>
         <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
-          🧪 <strong style={{ color: '#fbbf24' }}>Test Mode</strong> - Ready to analyze blockchain activity!
+          ⛓️ <strong style={{ color: '#10b981' }}>Live Blockchain Data</strong> - Connected to Monad Testnet
         </p>
       </div>
 
@@ -225,7 +189,7 @@ export default function MonadHero() {
               transition: 'transform 0.2s'
             }}
           >
-            ⚡ Discover My Hero Level
+            ⚡ Analyze Real Blockchain Data
           </button>
         </div>
       )}
@@ -243,10 +207,10 @@ export default function MonadHero() {
             margin: '0 auto 20px'
           }}></div>
           <p style={{ fontSize: '18px', marginBottom: '10px' }}>
-            Scanning the blockchain for heroic deeds...
+            🔍 Scanning Monad Testnet blockchain...
           </p>
           <p style={{ fontSize: '14px', opacity: '0.8' }}>
-            Analyzing transactions, contracts, and achievements
+            Fetching real transaction data, balances, and on-chain activity
           </p>
           <style jsx>{`
             @keyframes spin {
@@ -290,7 +254,25 @@ export default function MonadHero() {
             </div>
           </div>
 
-          {/* Расширенная статистика - ВСЕ 6 БЛОКОВ */}
+          {/* Адрес кошелька */}
+          <div style={{ 
+            background: 'rgba(255,255,255,0.1)', 
+            padding: '15px', 
+            borderRadius: '12px',
+            marginBottom: '25px',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            textAlign: 'center'
+          }}>
+            <p style={{ margin: '0', fontSize: '14px', opacity: '0.8' }}>
+              Analyzed Wallet Address:
+            </p>
+            <p style={{ margin: '5px 0 0 0', fontSize: '16px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+              {walletData.address.slice(0, 10)}...{walletData.address.slice(-8)}
+            </p>
+          </div>
+
+          {/* Расширенная статистика - ВСЕ 7 БЛОКОВ */}
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(2, 1fr)', 
@@ -354,14 +336,14 @@ export default function MonadHero() {
               border: '1px solid rgba(255,255,255,0.2)'
             }}>
               <h4 style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
-                💎 Power Level (MON)
+                💎 Total Volume (MON)
               </h4>
               <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
                 {walletData.volume}
               </p>
             </div>
 
-            {/* НОВЫЙ Блок 5 - Hero Score */}
+            {/* Блок 5 - Hero Score */}
             <div style={{ 
               background: 'rgba(255,255,255,0.1)', 
               padding: '20px', 
@@ -377,7 +359,7 @@ export default function MonadHero() {
               </p>
             </div>
             
-            {/* НОВЫЙ Блок 6 - Contract Types */}
+            {/* Блок 6 - Contract Types */}
             <div style={{ 
               background: 'rgba(255,255,255,0.1)', 
               padding: '20px', 
@@ -390,6 +372,26 @@ export default function MonadHero() {
               </h4>
               <p style={{ margin: '0', fontSize: '16px', fontWeight: 'bold', color: 'white' }}>
                 {walletData?.contractTypes?.join(', ') || 'N/A'}
+              </p>
+            </div>
+
+            {/* Блок 7 - Баланс (занимает 2 колонки) */}
+            <div style={{ 
+              background: 'rgba(255,255,255,0.1)', 
+              padding: '20px', 
+              borderRadius: '15px',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              gridColumn: 'span 2'
+            }}>
+              <h4 style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
+                💰 Current Wallet Balance
+              </h4>
+              <p style={{ margin: '0', fontSize: '24px', fontWeight: 'bold', color: 'white' }}>
+                {parseFloat(walletData.balance).toFixed(6)} MON
+              </p>
+              <p style={{ margin: '5px 0 0 0', fontSize: '12px', opacity: '0.7' }}>
+                {walletData.isActive ? '🟢 Active Wallet' : '🔴 Inactive Wallet'}
               </p>
             </div>
           </div>
@@ -441,7 +443,7 @@ export default function MonadHero() {
                 cursor: 'pointer'
               }}
             >
-              🔄 Analyze Again
+              🔄 Analyze Another Wallet
             </button>
           </div>
         </div>
