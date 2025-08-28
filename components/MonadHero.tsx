@@ -224,8 +224,6 @@ export default function MonadHero() {
               boxShadow: '0 8px 20px rgba(124, 58, 237, 0.4)',
               transition: 'transform 0.2s'
             }}
-            onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-            onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
           >
             ⚡ Discover My Hero Level
           </button>
@@ -417,8 +415,6 @@ export default function MonadHero() {
                   transition: 'transform 0.2s',
                   opacity: minting ? 0.7 : 1
                 }}
-                onMouseOver={(e) => !minting && (e.target.style.transform = 'scale(1.05)')}
-                onMouseOut={(e) => !minting && (e.target.style.transform = 'scale(1)')}
               >
                 {minting 
                   ? '🔄 Minting...' 
