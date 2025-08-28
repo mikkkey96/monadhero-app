@@ -18,10 +18,10 @@ export interface WalletAnalysis {
   averageGasUsed: string;
   balance: string;
   isActive: boolean;
-  isRealData: boolean; // Добавляем флаг реальных данных
+  isRealData: boolean;
 }
 
-// Функция создания провайдера с retry
+// Функция создания провайдера с retry (ИСПРАВЛЕНА)
 async function createProvider(): Promise<ethers.JsonRpcProvider | null> {
   for (const rpcUrl of MONAD_RPC_URLS) {
     try {
@@ -43,13 +43,14 @@ async function createProvider(): Promise<ethers.JsonRpcProvider | null> {
       console.log(`✅ Connected to ${rpcUrl}, block: ${blockNumber}`);
       
       return provider;
-    } catch (error) {
-      console.log(`❌ Failed to connect to ${rpcUrl}:`, error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.log(`❌ Failed to connect to ${rpcUrl}:`, errorMessage);
       continue;
     }
   }
   
-  return null; // Все RPC не работают
+  return null;
 }
 
 export async function analyzeWallet(address: string): Promise<WalletAnalysis> {
@@ -100,28 +101,29 @@ export async function analyzeWallet(address: string): Promise<WalletAnalysis> {
       averageGasUsed: (21000 + Math.floor(Math.random() * 30000)).toString(),
       balance: balanceInMON,
       isActive,
-      isRealData: true // РЕАЛЬНЫЕ ДАННЫЕ!
+      isRealData: true
     };
 
     console.log('✅ SUCCESS! Real blockchain data loaded:', realAnalysis);
     return realAnalysis;
 
-  } catch (error) {
-    console.error('❌ Blockchain connection failed:', error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Blockchain connection failed:', errorMessage);
     
     // Создаем более реалистичную симуляцию
     const simulatedAnalysis: WalletAnalysis = {
       address,
-      transactions: Math.floor(Math.random() * 150) + 25, // 25-175 транзакций
-      contracts: Math.floor(Math.random() * 20) + 5,      // 5-25 контрактов
-      daysActive: Math.floor(Math.random() * 90) + 14,    // 14-104 дня
-      volume: (Math.random() * 25 + 1).toFixed(4),       // 1-26 MON
+      transactions: Math.floor(Math.random() * 150) + 25,
+      contracts: Math.floor(Math.random() * 20) + 5,
+      daysActive: Math.floor(Math.random() * 90) + 14,
+      volume: (Math.random() * 25 + 1).toFixed(4),
       firstTransaction: Date.now() - (Math.floor(Math.random() * 90 + 14) * 24 * 60 * 60 * 1000),
       contractTypes: ['DEX', 'DeFi', 'NFT'].slice(0, Math.floor(Math.random() * 3) + 1),
       averageGasUsed: (25000 + Math.floor(Math.random() * 40000)).toString(),
       balance: (Math.random() * 25 + 1).toFixed(4),
       isActive: true,
-      isRealData: false // СИМУЛИРОВАННЫЕ ДАННЫЕ!
+      isRealData: false
     };
     
     console.log('🎭 Using simulated data:', simulatedAnalysis);
@@ -157,5 +159,5 @@ export function calculateHeroScore(analysis: WalletAnalysis): number {
 }
 
 export function getTestAddress(): string {
-  return '0xC8F64A659edc7c422859d06322Aa879c7F1AcB9b'; // Ваш активный адрес
+  return '0xC8F64A659edc7c422859d06322Aa879c7F1AcB9b';
 }
