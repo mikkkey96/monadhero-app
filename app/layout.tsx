@@ -1,25 +1,24 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-
-import { Providers } from '@/components/providers'
+'use client'
 import './globals.css'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiProvider } from 'wagmi'
+import { config } from '@/lib/wagmi'
 
-const inter = Inter({ subsets: ['latin'] })
-
-export const metadata: Metadata = {
-  title: 'Monad Farcaster MiniApp Template',
-  description: 'A template for building mini-apps on Farcaster and Monad',
-}
+const queryClient = new QueryClient()
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
+      <body>
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </WagmiProvider>
       </body>
     </html>
   )
