@@ -1,35 +1,41 @@
-import App from '@/components/pages/app'
-import { APP_URL } from '@/lib/constants'
-import type { Metadata } from 'next'
+import { Metadata } from "next";
+
+// Используем стандартный способ получения переменных окружения
+const appUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
 
 const frame = {
-  version: 'next',
-  imageUrl: `${APP_URL}/images/feed.png`,
+  version: "next",
+  imageUrl: `${appUrl}/images/feed.png`,
   button: {
-    title: 'Launch Template',
+    title: "Become a Hero 🦸‍♂️",
     action: {
-      type: 'launch_frame',
-      name: 'Monad Farcaster MiniApp Template',
-      url: APP_URL,
-      splashImageUrl: `${APP_URL}/images/splash.png`,
-      splashBackgroundColor: '#f7f7f7',
+      type: "launch_frame",
+      name: "MonadHero - Earn Hero NFT Badges",
+      url: appUrl,
+      splashImageUrl: `${appUrl}/images/splash.png`,
+      splashBackgroundColor: "#7c3aed",
     },
   },
-}
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'Monad Farcaster MiniApp Template',
+    title: "MonadHero",
+    description: "Earn NFT badges based on your Monad blockchain activity",
     openGraph: {
-      title: 'Monad Farcaster MiniApp Template',
-      description: 'A template for building mini-apps on Farcaster and Monad',
+      title: "MonadHero",
+      description: "Earn NFT badges based on your Monad blockchain activity",
     },
     other: {
-      'fc:frame': JSON.stringify(frame),
+      "fc:frame": JSON.stringify(frame),
     },
-  }
+  };
 }
 
+// Вместо import App from "@/components/pages/app";
+import MonadHero from "@/components/MonadHero";
+
 export default function Home() {
-  return <App />
+  return <MonadHero />;
 }
+
