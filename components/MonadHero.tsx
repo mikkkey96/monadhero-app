@@ -6,7 +6,7 @@ import { parseEther } from 'viem'
 import { analyzeWallet, calculateHeroScore, type WalletAnalysis } from '@/utils/monadAnalyzer'
 
 // Адрес смарт-контракта MonadHero NFT (обновить после деплоя)
-const HERO_NFT_CONTRACT = '0x0000000000000000000000000000000000000000' as `0x${string}` // TODO: Обновить после деплоя
+const HERO_NFT_CONTRACT = '0x7415CeEac1bE1480794701197F7BEBa078f95591' as `0x${string}` // TODO: Обновить после деплоя
 
 // ABI для функции mintHeroBadge
 const HERO_NFT_ABI = [
@@ -20,8 +20,23 @@ const HERO_NFT_ABI = [
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
     "stateMutability": "payable",
     "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "hero", "type": "address"}],
+    "name": "heroTokens",
+    "outputs": [{"internalType": "uint256[]", "name": "", "type": "uint256[]"}],
+    "stateMutability": "view",
+    "type": "function"
   }
 ] as const
+
 
 export default function MonadHero() {
   const [analyzing, setAnalyzing] = useState(false)
@@ -109,10 +124,7 @@ export default function MonadHero() {
       return
     }
 
-    if (HERO_NFT_CONTRACT === '0x0000000000000000000000000000000000000000') {
-      alert('⚠️ Smart contract not deployed yet. Using demo mode for now.')
-      return
-    }
+    
     
     try {
       console.log('🎖️ Minting NFT to blockchain...')
