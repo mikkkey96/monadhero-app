@@ -1,8 +1,6 @@
-// components/pages/app.tsx
 import { useState } from 'react';
 import { SafeAreaContainer } from '@/components/SafeAreaContainer';
 import { useMiniAppContext } from '@/hooks/useMiniAppContext';
-import { NFTViewer } from '@/components/NFT/NFTViewer';
 import { Demo } from '@/components/Demo';
 
 export default function Home() {
@@ -11,7 +9,7 @@ export default function Home() {
 
   return (
     <SafeAreaContainer insets={context?.client.safeAreaInsets}>
-      {/* Навигация */}
+      {/* Добавьте эту навигацию */}
       <div className="flex justify-center mb-6">
         <div className="bg-gray-100 rounded-full p-1 flex">
           <button
@@ -39,7 +37,14 @@ export default function Home() {
 
       {/* Контент */}
       {activeTab === 'home' && <Demo />}
-      {activeTab === 'nfts' && <NFTViewer />}
+      {activeTab === 'nfts' && (
+        <div className="text-center p-8">
+          <h2 className="text-2xl font-bold mb-4">NFT Коллекция</h2>
+          <p className="text-gray-600">
+            Здесь будут отображаться ваши NFT из Monad Testnet
+          </p>
+        </div>
+      )}
     </SafeAreaContainer>
   );
 }

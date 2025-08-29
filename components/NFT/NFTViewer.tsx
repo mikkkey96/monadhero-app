@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { formatEther } from 'viem';
+import { NFTCard } from './NFTCard';
+import { NFTModal } from './NFTModal';
+import { getUserNFTs } from '@/utils/nftUtils';
 
+// Определите типы здесь или в отдельном файле types
 interface NFTMetadata {
   name: string;
   description: string;
