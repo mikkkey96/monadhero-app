@@ -5,11 +5,9 @@ import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTran
 import { parseEther } from 'viem'
 import { sdk } from '@farcaster/miniapp-sdk'
 import { analyzeWallet, calculateHeroScore, type WalletAnalysis } from '@/utils/monadAnalyzer'
-import FortuneWheel from './FortuneWheel'
-import Leaderboard from './Leaderboard'
 
-// Адрес смарт-контракта MonadHero NFT (обновить после деплоя)
-const HERO_NFT_CONTRACT = '0xВАШ_РЕАЛЬНЫЙ_АДРЕС_ИЗ_REMIX' as `0x${string}`
+// Адрес смарт-контракта MonadHero NFT 
+const HERO_NFT_CONTRACT = '0x7415CeEac1bE1480794701197F7BEBa078f95591' as `0x${string}`
 
 // ABI для функции mintHeroBadge
 const HERO_NFT_ABI = [
@@ -30,13 +28,6 @@ const HERO_NFT_ABI = [
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
     "stateMutability": "view",
     "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "hero", "type": "address"}],
-    "name": "heroTokens",
-    "outputs": [{"internalType": "uint256[]", "name": "", "type": "uint256[]"}],
-    "stateMutability": "view",
-    "type": "function"
   }
 ] as const
 
@@ -44,7 +35,6 @@ export default function MonadHero() {
   const [analyzing, setAnalyzing] = useState(false)
   const [walletData, setWalletData] = useState<WalletAnalysis | null>(null)
   const [heroScore, setHeroScore] = useState<number>(0)
-  const [activeTab, setActiveTab] = useState<'hero' | 'fortune' | 'leaderboard'>('hero')
 
   // Wagmi hooks для работы с кошельком
   const { isConnected, address } = useAccount()
@@ -68,7 +58,7 @@ export default function MonadHero() {
     initFarcaster()
   }, [])
 
-  // Обновленная функция анализа с реальными блокчейн данными
+  // Функция анализа кошелька
   const startAnalysis = async () => {
     if (!isConnected || !address) {
       alert('🔗 Please connect your Farcaster wallet first!')
@@ -80,7 +70,6 @@ export default function MonadHero() {
     try {
       console.log('🔍 Analyzing connected wallet:', address)
       
-      // Получаем данные (реальные или симулированные)
       const analysis = await analyzeWallet(address)
       const score = calculateHeroScore(analysis)
       
@@ -135,7 +124,7 @@ export default function MonadHero() {
 
   const heroLevel = walletData ? calculateHeroLevel(heroScore) : null
 
-  // Функция минта NFT в блокчейне
+  // Функция минта NFT
   const handleMintNFT = async () => {
     if (!heroLevel || heroLevel.nfts === 0 || !isConnected || !address) {
       alert('🔗 Please connect wallet and complete analysis first!')
@@ -150,7 +139,7 @@ export default function MonadHero() {
         abi: HERO_NFT_ABI,
         functionName: 'mintHeroBadge',
         args: [heroLevel.name, BigInt(heroLevel.nfts), BigInt(heroScore)],
-        value: parseEther('0.001') // 0.001 MON mint fee
+        value: parseEther('0.001')
       })
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -159,10 +148,34 @@ export default function MonadHero() {
     }
   }
 
-  // Компонент подключения кошелька
-  const WalletConnection = () => {
-    if (isConnected && address) {
-      return (
+  return (
+    <div style={{ 
+      padding: '20px', 
+      fontFamily: 'Arial, sans-serif',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      minHeight: '100vh',
+      color: 'white'
+    }}>
+      {/* Заголовок */}
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <h1 style={{ 
+          fontSize: '32px', 
+          margin: '0 0 10px 0',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+        }}>
+          🦸‍♂️ MonadHero
+        </h1>
+        <p style={{ 
+          fontSize: '18px', 
+          margin: '0 0 20px 0',
+          opacity: '0.9'
+        }}>
+          Analyze your Monad blockchain activity and mint exclusive Hero NFT badges
+        </p>
+      </div>
+
+      {/* Подключение кошелька */}
+      {isConnected && address ? (
         <div style={{ 
           background: 'rgba(16, 185, 129, 0.1)', 
           padding: '15px', 
@@ -191,156 +204,37 @@ export default function MonadHero() {
             Disconnect
           </button>
         </div>
-      )
-    }
-
-    return (
-      <div style={{ 
-        background: 'rgba(251, 191, 36, 0.1)', 
-        padding: '15px', 
-        borderRadius: '12px',
-        marginBottom: '20px',
-        border: '1px solid rgba(251, 191, 36, 0.3)'
-      }}>
-        <p style={{ margin: '0 0 15px 0', fontSize: '16px', color: 'white' }}>
-          💰 <strong style={{ color: '#fbbf24' }}>Connect Your Farcaster Wallet</strong>
-        </p>
-        <p style={{ margin: '0 0 15px 0', fontSize: '14px', opacity: '0.8' }}>
-          Connect your wallet to analyze your Monad activity, mint Hero badges, and play Fortune Wheel
-        </p>
-        <button
-          onClick={() => connectors.length > 0 && connect({ connector: connectors[0] })}
-          style={{
-            background: 'linear-gradient(45deg, #7c3aed, #a855f7)',
-            color: 'white',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: '10px',
-            fontSize: '16px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            width: '100%'
-          }}
-        >
-          🔗 Connect Farcaster Wallet
-        </button>
-      </div>
-    )
-  }
-
-  // Компонент статуса транзакции минта
-  const MintStatus = () => {
-    if (isPending) {
-      return (
+      ) : (
         <div style={{ 
           background: 'rgba(251, 191, 36, 0.1)', 
           padding: '15px', 
           borderRadius: '12px',
-          marginTop: '15px',
-          border: '1px solid rgba(251, 191, 36, 0.3)',
-          textAlign: 'center'
-        }}>
-          <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
-            ⏳ <strong style={{ color: '#fbbf24' }}>Transaction Pending...</strong>
-          </p>
-          <p style={{ margin: '5px 0 0 0', fontSize: '14px', opacity: '0.8' }}>
-            Please confirm the transaction in your wallet
-          </p>
-        </div>
-      )
-    }
-
-    if (isConfirming) {
-      return (
-        <div style={{ 
-          background: 'rgba(124, 58, 237, 0.1)', 
-          padding: '15px', 
-          borderRadius: '12px',
-          marginTop: '15px',
-          border: '1px solid rgba(124, 58, 237, 0.3)',
-          textAlign: 'center'
-        }}>
-          <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
-            ⛓️ <strong style={{ color: '#a855f7' }}>Confirming on Blockchain...</strong>
-          </p>
-          <p style={{ margin: '5px 0 0 0', fontSize: '14px', opacity: '0.8' }}>
-            Waiting for block confirmation
-          </p>
-        </div>
-      )
-    }
-
-    if (isConfirmed) {
-      return (
-        <div style={{ 
-          background: 'rgba(16, 185, 129, 0.1)', 
-          padding: '15px', 
-          borderRadius: '12px',
-          marginTop: '15px',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          textAlign: 'center'
-        }}>
-          <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
-            🎉 <strong style={{ color: '#10b981' }}>NFT Minted Successfully!</strong>
-          </p>
-          <p style={{ margin: '5px 0 0 0', fontSize: '14px', opacity: '0.8' }}>
-            Transaction Hash: {hash?.slice(0, 10)}...{hash?.slice(-8)}
-          </p>
-        </div>
-      )
-    }
-
-    if (error) {
-      return (
-        <div style={{ 
-          background: 'rgba(239, 68, 68, 0.1)', 
-          padding: '15px', 
-          borderRadius: '12px',
-          marginTop: '15px',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          textAlign: 'center'
-        }}>
-          <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
-            ❌ <strong style={{ color: '#ef4444' }}>Transaction Failed</strong>
-          </p>
-          <p style={{ margin: '5px 0 0 0', fontSize: '12px', opacity: '0.8' }}>
-            {error.message.slice(0, 100)}...
-          </p>
-        </div>
-      )
-    }
-
-    return null
-  }
-
-  // Контент вкладки Hero
-  const HeroContent = () => (
-    <>
-      {/* ИНДИКАТОР ТИПА ДАННЫХ - ПОСЛЕ АНАЛИЗА */}
-      {walletData && (
-        <div style={{ 
-          background: walletData.isRealData 
-            ? 'rgba(16, 185, 129, 0.1)' 
-            : 'rgba(251, 191, 36, 0.1)', 
-          padding: '15px', 
-          borderRadius: '12px',
           marginBottom: '20px',
-          backdropFilter: 'blur(10px)',
-          border: walletData.isRealData 
-            ? '1px solid rgba(16, 185, 129, 0.3)' 
-            : '1px solid rgba(251, 191, 36, 0.3)'
+          border: '1px solid rgba(251, 191, 36, 0.3)'
         }}>
-          <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
-            {walletData.isRealData ? (
-              <>⛓️ <strong style={{ color: '#10b981' }}>Real Blockchain Data</strong> - Successfully connected to Monad Testnet</>
-            ) : (
-              <>🎭 <strong style={{ color: '#fbbf24' }}>Simulated Data</strong> - RPC connection failed, using enhanced demo data</>
-            )}
+          <p style={{ margin: '0 0 15px 0', fontSize: '16px', color: 'white' }}>
+            💰 <strong style={{ color: '#fbbf24' }}>Connect Your Farcaster Wallet</strong>
           </p>
+          <button
+            onClick={() => connectors.length > 0 && connect({ connector: connectors[0] })}
+            style={{
+              background: 'linear-gradient(45deg, #7c3aed, #a855f7)',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '10px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              width: '100%'
+            }}
+          >
+            🔗 Connect Farcaster Wallet
+          </button>
         </div>
       )}
 
-      {/* Кнопка анализа */}
+      {/* Остальная логика приложения */}
       {!analyzing && !walletData && isConnected && (
         <div style={{ textAlign: 'center' }}>
           <button 
@@ -354,8 +248,7 @@ export default function MonadHero() {
               fontSize: '18px',
               cursor: 'pointer',
               fontWeight: 'bold',
-              boxShadow: '0 8px 20px rgba(124, 58, 237, 0.4)',
-              transition: 'transform 0.2s'
+              boxShadow: '0 8px 20px rgba(124, 58, 237, 0.4)'
             }}
           >
             ⚡ Analyze My Wallet Activity
@@ -378,9 +271,6 @@ export default function MonadHero() {
           <p style={{ fontSize: '18px', marginBottom: '10px' }}>
             🔍 Analyzing your wallet on Monad Testnet...
           </p>
-          <p style={{ fontSize: '14px', opacity: '0.8' }}>
-            Fetching transaction history, balance, and on-chain activity
-          </p>
           <style jsx>{`
             @keyframes spin {
               0% { transform: rotate(0deg); }
@@ -393,6 +283,27 @@ export default function MonadHero() {
       {/* Результаты анализа */}
       {walletData && heroLevel && (
         <div>
+          {/* Индикатор типа данных */}
+          <div style={{ 
+            background: walletData.isRealData 
+              ? 'rgba(16, 185, 129, 0.1)' 
+              : 'rgba(251, 191, 36, 0.1)', 
+            padding: '15px', 
+            borderRadius: '12px',
+            marginBottom: '20px',
+            border: walletData.isRealData 
+              ? '1px solid rgba(16, 185, 129, 0.3)' 
+              : '1px solid rgba(251, 191, 36, 0.3)'
+          }}>
+            <p style={{ margin: '0', fontSize: '16px', color: 'white' }}>
+              {walletData.isRealData ? (
+                <>⛓️ <strong style={{ color: '#10b981' }}>Real Blockchain Data</strong> - Successfully connected to Monad Testnet</>
+              ) : (
+                <>🎭 <strong style={{ color: '#fbbf24' }}>Simulated Data</strong> - RPC connection failed, using enhanced demo data</>
+              )}
+            </p>
+          </div>
+
           {/* Карточка уровня героя */}
           <div style={{
             background: `linear-gradient(135deg, ${heroLevel.color}, ${heroLevel.color}dd)`,
@@ -423,19 +334,17 @@ export default function MonadHero() {
             </div>
           </div>
 
-          {/* Расширенная статистика */}
+          {/* Статистика */}
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(2, 1fr)', 
             gap: '15px',
             marginBottom: '25px'
           }}>
-            {/* Блок 1 - Транзакции */}
             <div style={{ 
               background: 'rgba(255,255,255,0.1)', 
               padding: '20px', 
               borderRadius: '15px',
-              backdropFilter: 'blur(10px)',
               border: '1px solid rgba(255,255,255,0.2)'
             }}>
               <h4 style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
@@ -444,36 +353,12 @@ export default function MonadHero() {
               <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
                 {walletData.transactions}
               </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
-                {walletData.isRealData ? 'Real on-chain' : 'Simulated'}
-              </p>
             </div>
 
-            {/* Блок 2 - Контракты */}
             <div style={{ 
               background: 'rgba(255,255,255,0.1)', 
               padding: '20px', 
               borderRadius: '15px',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255,255,255,0.2)'
-            }}>
-              <h4 style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
-                🏛️ Alliances (Contracts)
-              </h4>
-              <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
-                {walletData.contracts}
-              </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
-                Estimated interactions
-              </p>
-            </div>
-
-            {/* Блок 3 - Hero Score */}
-            <div style={{ 
-              background: 'rgba(255,255,255,0.1)', 
-              padding: '20px', 
-              borderRadius: '15px',
-              backdropFilter: 'blur(10px)',
               border: '1px solid rgba(255,255,255,0.2)'
             }}>
               <h4 style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
@@ -482,17 +367,26 @@ export default function MonadHero() {
               <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
                 {heroScore}
               </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
-                {walletData.isRealData ? '+200 real data bonus' : 'Simulation mode'}
-              </p>
             </div>
-            
-            {/* Блок 4 - Баланс */}
+
             <div style={{ 
               background: 'rgba(255,255,255,0.1)', 
               padding: '20px', 
               borderRadius: '15px',
-              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}>
+              <h4 style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
+                🏛️ Alliances (Contracts)
+              </h4>
+              <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
+                {walletData.contracts}
+              </p>
+            </div>
+            
+            <div style={{ 
+              background: 'rgba(255,255,255,0.1)', 
+              padding: '20px', 
+              borderRadius: '15px',
               border: '1px solid rgba(255,255,255,0.2)'
             }}>
               <h4 style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
@@ -500,9 +394,6 @@ export default function MonadHero() {
               </h4>
               <p style={{ margin: '0', fontSize: '28px', fontWeight: 'bold', color: 'white' }}>
                 {parseFloat(walletData.balance).toFixed(4)}
-              </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '10px', opacity: '0.6' }}>
-                {walletData.isRealData ? 'Real balance' : 'Simulated'}
               </p>
             </div>
           </div>
@@ -525,121 +416,8 @@ export default function MonadHero() {
                   cursor: (isPending || isConfirming) ? 'not-allowed' : 'pointer',
                   fontWeight: 'bold',
                   boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4)',
-                  transition: 'transform 0.2s',
                   opacity: (isPending || isConfirming) ? 0.7 : 1
                 }}
               >
                 {isPending ? '⏳ Confirm in Wallet...' :
-                 isConfirming ? '⛓️ Minting on Blockchain...' :
-                 `🎖️ Mint ${heroLevel.nfts} Hero Badge${heroLevel.nfts !== 1 ? 's' : ''} (0.001 MON)`}
-              </button>
-            </div>
-          )}
-
-          {/* Статус минта */}
-          <MintStatus />
-
-          {/* Кнопка нового анализа */}
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <button 
-              onClick={() => {
-                setWalletData(null)
-                setHeroScore(0)
-              }}
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                color: 'white',
-                border: '1px solid rgba(255,255,255,0.3)',
-                padding: '12px 24px',
-                borderRadius: '10px',
-                fontSize: '14px',
-                cursor: 'pointer'
-              }}
-            >
-              🔄 Analyze Again
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  )
-
-  return (
-    <div style={{ 
-      padding: '20px', 
-      fontFamily: 'Arial, sans-serif',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      minHeight: '100vh',
-      color: 'white'
-    }}>
-      {/* Заголовок */}
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <h1 style={{ 
-          fontSize: '32px', 
-          margin: '0 0 10px 0',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
-        }}>
-          🦸‍♂️ MonadHero
-        </h1>
-        <p style={{ 
-          fontSize: '18px', 
-          margin: '0 0 20px 0',
-          opacity: '0.9'
-        }}>
-          Analyze activity, mint badges, and spin the wheel of fortune
-        </p>
-      </div>
-
-      {/* Табы навигации */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px' }}>
-        {[
-          { key: 'hero', label: '🦸‍♂️ Hero Badges', description: 'Analyze & Mint' },
-          { key: 'fortune', label: '🎡 Fortune Wheel', description: 'Spin & Win' },
-          { key: 'leaderboard', label: '🏆 Leaderboard', description: 'Top Players' }
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
-            style={{
-              background: activeTab === tab.key 
-                ? 'linear-gradient(45deg, #7c3aed, #a855f7)' 
-                : 'rgba(255,255,255,0.1)',
-              color: 'white',
-              border: activeTab === tab.key 
-                ? '2px solid rgba(255,255,255,0.3)'
-                : '1px solid rgba(255,255,255,0.2)',
-              padding: '12px 16px',
-              borderRadius: '12px',
-              fontSize: '14px',
-              cursor: 'pointer',
-              margin: '0 8px',
-              fontWeight: activeTab === tab.key ? 'bold' : 'normal',
-              textAlign: 'center',
-              minWidth: '120px',
-              transition: 'all 0.2s ease',
-              boxShadow: activeTab === tab.key 
-                ? '0 4px 15px rgba(124, 58, 237, 0.3)' 
-                : 'none'
-            }}
-          >
-            <div style={{ marginBottom: '4px' }}>{tab.label}</div>
-            <div style={{ 
-              fontSize: '10px', 
-              opacity: activeTab === tab.key ? 0.9 : 0.6 
-            }}>
-              {tab.description}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Компонент подключения кошелька (показывается везде) */}
-      <WalletConnection />
-
-      {/* Условный рендер контента */}
-      {activeTab === 'hero' && <HeroContent />}
-      {activeTab === 'fortune' && <FortuneWheel />}
-      {activeTab === 'leaderboard' && <Leaderboard />}
-    </div>
-  )
-}
+                 isConfirming ? '⛓️ Minting on Blockchain
