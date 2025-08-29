@@ -1,3 +1,4 @@
+// components/pages/app.tsx
 import { useState } from 'react';
 import { SafeAreaContainer } from '@/components/SafeAreaContainer';
 import { useMiniAppContext } from '@/hooks/useMiniAppContext';
