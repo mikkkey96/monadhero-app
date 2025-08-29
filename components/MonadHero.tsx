@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther } from 'viem'
+import { sdk } from '@farcaster/miniapp-sdk'
 import { analyzeWallet, calculateHeroScore, type WalletAnalysis } from '@/utils/monadAnalyzer'
+import FortuneWheel from './FortuneWheel'
+import Leaderboard from './Leaderboard'
 
 // Адрес смарт-контракта MonadHero NFT (обновить после деплоя)
-const HERO_NFT_CONTRACT = '0x7415CeEac1bE1480794701197F7BEBa078f95591' as `0x${string}` // TODO: Обновить после деплоя
+const HERO_NFT_CONTRACT = '0xВАШ_РЕАЛЬНЫЙ_АДРЕС_ИЗ_REMIX' as `0x${string}`
 
 // ABI для функции mintHeroBadge
 const HERO_NFT_ABI = [
@@ -37,11 +40,11 @@ const HERO_NFT_ABI = [
   }
 ] as const
 
-
 export default function MonadHero() {
   const [analyzing, setAnalyzing] = useState(false)
   const [walletData, setWalletData] = useState<WalletAnalysis | null>(null)
   const [heroScore, setHeroScore] = useState<number>(0)
+  const [activeTab, setActiveTab] = useState<'hero' | 'fortune' | 'leaderboard'>('hero')
 
   // Wagmi hooks для работы с кошельком
   const { isConnected, address } = useAccount()
@@ -49,6 +52,21 @@ export default function MonadHero() {
   const { disconnect } = useDisconnect()
   const { writeContract, data: hash, error, isPending } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
+
+  // Инициализация Farcaster SDK
+  useEffect(() => {
+    const initFarcaster = async () => {
+      try {
+        console.log('🚀 Initializing Farcaster Mini App...')
+        await sdk.actions.ready()
+        console.log('✅ Farcaster Mini App ready!')
+      } catch (error) {
+        console.error('❌ Farcaster SDK error:', error)
+      }
+    }
+
+    initFarcaster()
+  }, [])
 
   // Обновленная функция анализа с реальными блокчейн данными
   const startAnalysis = async () => {
@@ -123,8 +141,6 @@ export default function MonadHero() {
       alert('🔗 Please connect wallet and complete analysis first!')
       return
     }
-
-    
     
     try {
       console.log('🎖️ Minting NFT to blockchain...')
@@ -136,8 +152,9 @@ export default function MonadHero() {
         args: [heroLevel.name, BigInt(heroLevel.nfts), BigInt(heroScore)],
         value: parseEther('0.001') // 0.001 MON mint fee
       })
-    } catch (error) {
-      console.error('Mint failed:', error)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('Mint failed:', errorMessage)
       alert('❌ Failed to mint NFT. Please try again.')
     }
   }
@@ -189,7 +206,7 @@ export default function MonadHero() {
           💰 <strong style={{ color: '#fbbf24' }}>Connect Your Farcaster Wallet</strong>
         </p>
         <p style={{ margin: '0 0 15px 0', fontSize: '14px', opacity: '0.8' }}>
-          Connect your wallet to analyze your real Monad activity and mint Hero NFT badges
+          Connect your wallet to analyze your Monad activity, mint Hero badges, and play Fortune Wheel
         </p>
         <button
           onClick={() => connectors.length > 0 && connect({ connector: connectors[0] })}
@@ -296,35 +313,9 @@ export default function MonadHero() {
     return null
   }
 
-  return (
-    <div style={{ 
-      padding: '20px', 
-      fontFamily: 'Arial, sans-serif',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      minHeight: '100vh',
-      color: 'white'
-    }}>
-      {/* Заголовок */}
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h1 style={{ 
-          fontSize: '32px', 
-          margin: '0 0 10px 0',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
-        }}>
-          🦸‍♂️ MonadHero
-        </h1>
-        <p style={{ 
-          fontSize: '18px', 
-          margin: '0',
-          opacity: '0.9'
-        }}>
-          Connect wallet, analyze your Monad activity, and mint Hero NFT badges
-        </p>
-      </div>
-
-      {/* Компонент подключения кошелька */}
-      <WalletConnection />
-
+  // Контент вкладки Hero
+  const HeroContent = () => (
+    <>
       {/* ИНДИКАТОР ТИПА ДАННЫХ - ПОСЛЕ АНАЛИЗА */}
       {walletData && (
         <div style={{ 
@@ -570,6 +561,85 @@ export default function MonadHero() {
           </div>
         </div>
       )}
+    </>
+  )
+
+  return (
+    <div style={{ 
+      padding: '20px', 
+      fontFamily: 'Arial, sans-serif',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      minHeight: '100vh',
+      color: 'white'
+    }}>
+      {/* Заголовок */}
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <h1 style={{ 
+          fontSize: '32px', 
+          margin: '0 0 10px 0',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+        }}>
+          🦸‍♂️ MonadHero
+        </h1>
+        <p style={{ 
+          fontSize: '18px', 
+          margin: '0 0 20px 0',
+          opacity: '0.9'
+        }}>
+          Analyze activity, mint badges, and spin the wheel of fortune
+        </p>
+      </div>
+
+      {/* Табы навигации */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px' }}>
+        {[
+          { key: 'hero', label: '🦸‍♂️ Hero Badges', description: 'Analyze & Mint' },
+          { key: 'fortune', label: '🎡 Fortune Wheel', description: 'Spin & Win' },
+          { key: 'leaderboard', label: '🏆 Leaderboard', description: 'Top Players' }
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as any)}
+            style={{
+              background: activeTab === tab.key 
+                ? 'linear-gradient(45deg, #7c3aed, #a855f7)' 
+                : 'rgba(255,255,255,0.1)',
+              color: 'white',
+              border: activeTab === tab.key 
+                ? '2px solid rgba(255,255,255,0.3)'
+                : '1px solid rgba(255,255,255,0.2)',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              fontSize: '14px',
+              cursor: 'pointer',
+              margin: '0 8px',
+              fontWeight: activeTab === tab.key ? 'bold' : 'normal',
+              textAlign: 'center',
+              minWidth: '120px',
+              transition: 'all 0.2s ease',
+              boxShadow: activeTab === tab.key 
+                ? '0 4px 15px rgba(124, 58, 237, 0.3)' 
+                : 'none'
+            }}
+          >
+            <div style={{ marginBottom: '4px' }}>{tab.label}</div>
+            <div style={{ 
+              fontSize: '10px', 
+              opacity: activeTab === tab.key ? 0.9 : 0.6 
+            }}>
+              {tab.description}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Компонент подключения кошелька (показывается везде) */}
+      <WalletConnection />
+
+      {/* Условный рендер контента */}
+      {activeTab === 'hero' && <HeroContent />}
+      {activeTab === 'fortune' && <FortuneWheel />}
+      {activeTab === 'leaderboard' && <Leaderboard />}
     </div>
   )
 }
