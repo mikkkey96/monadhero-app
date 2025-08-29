@@ -81,8 +81,8 @@ export default function FortuneWheel() {
     args: address ? [address] : undefined,
   })
 
-  const currentBank = bankData ? formatEther(bankData) : '0'
-  const playerBalance = playerBalanceData ? formatEther(playerBalanceData) : '0'
+const currentBank = bankData ? formatEther(bankData as bigint) : '0'
+const playerBalance = playerBalanceData ? formatEther(playerBalanceData as bigint) : '0'
 
   // Депозит MON
   const handleDeposit = async () => {
