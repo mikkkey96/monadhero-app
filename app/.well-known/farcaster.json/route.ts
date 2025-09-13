@@ -25,4 +25,5 @@ export async function GET() {
     }
   };
 
-  return NextResponse.
+  return NextResponse.json(farcasterConfig);
+}
