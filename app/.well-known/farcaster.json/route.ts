@@ -9,7 +9,7 @@ export async function GET() {
       iconUrl: `${APP_URL}/images/icon.png`,
       homeUrl: `${APP_URL}`,
       imageUrl: `${APP_URL}/images/feed-new.png`,
-      subtitle: "Monad Score",
+      subtitle: "Monad Score", 
       description: "Analyze your Monad blockchain activity and mint Hero NFT badges",
       buttonTitle: "Become a Hero 🚀",
       splashImageUrl: `${APP_URL}/images/splash-new.png`,
